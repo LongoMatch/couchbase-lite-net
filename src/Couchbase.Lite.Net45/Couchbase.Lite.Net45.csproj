@@ -58,9 +58,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Net" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
+    <Reference Include="Newtonsoft.Json"/>
     <Reference Include="System.Net.Http.WebRequest" />
     <Reference Include="System.Net.Http" />
     <Reference Include="SQLitePCL.raw">
