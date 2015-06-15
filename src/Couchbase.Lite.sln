@@ -101,7 +101,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Couchbase.Lite.Listener.Uni
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Couchbase.Lite.Listener.Net45", "ListenerComponent\Couchbase.Lite.Listener.Net45\Couchbase.Lite.Listener.Net45.csproj", "{9AD3BADD-4F48-4208-B601-E63987C12049}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerformaceTests", "TestFTS\PerformaceTests.csproj", "{AA8A169D-9F22-4B47-AADB-692527073AD0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluendoUnitTests", "FluendoUnitTests.cs\FluendoUnitTests.csproj", "{77FF57C6-8885-48DE-A07D-9859482A3944}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -223,6 +223,18 @@ Global
 		{6B64CBD5-8D13-4E88-861D-DBBB87254BBC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6B64CBD5-8D13-4E88-861D-DBBB87254BBC}.Release|iPhone.ActiveCfg = Release|Any CPU
 		{6B64CBD5-8D13-4E88-861D-DBBB87254BBC}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Release|iPhone.Build.0 = Release|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{77FF57C6-8885-48DE-A07D-9859482A3944}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{81999CC3-2DB5-42DA-976F-20EF8AE047E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{81999CC3-2DB5-42DA-976F-20EF8AE047E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81999CC3-2DB5-42DA-976F-20EF8AE047E1}.Debug|iPhone.ActiveCfg = Debug|Any CPU

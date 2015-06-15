@@ -176,6 +176,7 @@ namespace Couchbase.Lite {
             IndexUpdateMode = query.IndexUpdateMode;
             AllDocsMode = query.AllDocsMode;
             FullTextSearch = query.FullTextSearch;
+            SQLSearch = query.SQLSearch;
         }
 
 
@@ -213,6 +214,7 @@ namespace Couchbase.Lite {
                 queryOptions.SetStartKeyDocId(StartKeyDocId);
                 queryOptions.SetEndKeyDocId(EndKeyDocId);
                 queryOptions.SetFullTextSearch(FullTextSearch);
+                queryOptions.SetSQLSearch(SQLSearch);
                 return queryOptions;
             }
         }
@@ -358,6 +360,8 @@ namespace Couchbase.Lite {
         }
 
         public string FullTextSearch { get; set; }
+
+        public string SQLSearch { get; set; }
 
         /// <summary>
         /// Event raised when a query has finished running.

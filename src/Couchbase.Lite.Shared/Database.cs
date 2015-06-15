@@ -793,7 +793,12 @@ CREATE TABLE maps (
   view_id INTEGER NOT NULL REFERENCES views(view_id) ON DELETE CASCADE, 
   sequence INTEGER NOT NULL REFERENCES revs(sequence) ON DELETE CASCADE, 
   key TEXT NOT NULL COLLATE JSON, 
-  value TEXT);
+  value TEXT,
+  key1 TEXT COLLATE JSON, 
+  key2 TEXT COLLATE JSON, 
+  key3 TEXT COLLATE JSON, 
+  key4 TEXT COLLATE JSON
+);
 CREATE INDEX maps_keys on maps(view_id, key COLLATE JSON); 
 CREATE TABLE replicators ( 
   remote TEXT NOT NULL, 

@@ -3,12 +3,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{AA8A169D-9F22-4B47-AADB-692527073AD0}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>TestFTS</RootNamespace>
-    <AssemblyName>TestFTS</AssemblyName>
-    <ReleaseVersion>1.1</ReleaseVersion>
+    <ProjectGuid>{77FF57C6-8885-48DE-A07D-9859482A3944}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>FluendoUnitTests.cs</RootNamespace>
+    <AssemblyName>FluendoUnitTests.cs</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <ReleaseVersion>1.1</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -18,7 +18,7 @@
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Externalconsole>true</Externalconsole>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -26,15 +26,23 @@
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Externalconsole>true</Externalconsole>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="FullTextSearchTests.cs" />
+    <Compile Include="SQLSearch.cs" />
+    <Compile Include="MultiKeySearch.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Couchbase.Lite.Net45\Couchbase.Lite.Net45.csproj">
       <Project>{C87E0C01-AAD6-46DA-9935-C772C112BB18}</Project>

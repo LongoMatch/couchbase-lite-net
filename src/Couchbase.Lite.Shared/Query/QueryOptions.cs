@@ -89,6 +89,8 @@ namespace Couchbase.Lite
 
         string fullTextSearch;
 
+        string sqlSearch;
+
         // only works with _all_docs, not regular views
         public object GetStartKey()
         {
@@ -290,6 +292,16 @@ namespace Couchbase.Lite
         public void SetFullTextSearch(string fullTextSearch)
         {
             this.fullTextSearch = fullTextSearch;
+        }
+
+        public string GetSQLSearch()
+        {
+            return sqlSearch;
+        }
+
+        public void SetSQLSearch (string sqlSearch)
+        {
+            this.sqlSearch = sqlSearch;
         }
     }
 }

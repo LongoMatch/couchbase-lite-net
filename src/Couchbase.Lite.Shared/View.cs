@@ -329,15 +329,38 @@ namespace Couchbase.Lite {
                                     try
                                     {
                                         string keyJson = " ";
+                                        FullTextKey fullKey = null;
+                                        PropertyKey propKey = null;
+
                                         var insertValues = new ContentValues();
 
-                                        if (key is FullTextKey) {
+                                        if (key is MultiKey) {
+                                            fullKey = (key as MultiKey).FullTextKey;
+                                            propKey = (key as MultiKey).PropertyKey;
+                                        } else {
+                                            fullKey = key as FullTextKey;
+                                            propKey = key as PropertyKey;
+                                        }
+
+                                        if (fullKey != null) {
                                             var cValues = new ContentValues();
-                                            cValues["content"] = (key as FullTextKey).Text;
+                                            cValues["content"] = fullKey.Text;
                                             var fullTextId = enclosingView.Database.StorageEngine.Insert("fulltext",
                                                                                                          null, cValues);
                                             insertValues["fulltext_id"] = fullTextId;
-                                        } else {
+                                        }
+
+                                        if (propKey != null) {
+                                            int i = 0;
+                                            foreach (object val in propKey.Keys) {
+                                                if (i == 0) {
+                                                    keyJson = Manager.GetObjectMapper().WriteValueAsString(val); 
+                                                } else {
+                                                    insertValues ["key" + i] = Manager.GetObjectMapper().WriteValueAsString(val);
+                                                }
+                                                i++;
+                                            }
+                                        } else if (key != null) {
                                             keyJson = Manager.GetObjectMapper().WriteValueAsString(key);
                                         }
                                         var valueJson = value == null ? null : Manager.GetObjectMapper().WriteValueAsString(value) ;
@@ -426,6 +449,43 @@ namespace Couchbase.Lite {
                     var value = FromJSON(cursor.GetBlob(3));
 
                     var row = new FullTextQueryRow(docId, sequence, fullTextID, value);
+                    row.Database = Database;
+                    rows.AddItem<QueryRow>(row);
+                    cursor.MoveToNext();
+                }
+            } catch (SQLException e) {
+                var errMsg = string.Format("Error querying view: {0}", this);
+                Log.E(Database.Tag, errMsg, e);
+                throw new CouchbaseLiteException(errMsg, e, new Status(StatusCode.DbError));
+            } finally {
+                if (cursor != null) {
+                    cursor.Close();
+                }
+            }
+            return rows;
+        }
+
+        IEnumerable<QueryRow> MultiKeyQueryWithOptions(QueryOptions options)
+        {
+            Cursor cursor = null;
+            IList<QueryRow> rows = new List<QueryRow>();
+            try {
+                cursor = MultiKeyResultSetWithOptions(options);
+                cursor.MoveToNext();
+                while (!cursor.IsAfterLast()) {
+                    List<object> key = new List<object> {
+                        FromJSON(cursor.GetBlob(0)),
+                        FromJSON(cursor.GetBlob(1)),
+                        FromJSON(cursor.GetBlob(2)),
+                        FromJSON(cursor.GetBlob(3)),
+                        FromJSON(cursor.GetBlob(4))
+                    };
+                    var value = FromJSON(cursor.GetBlob(5));
+                    var docId = cursor.GetString(6);
+                    var sequenceLong = cursor.GetLong(7);
+                    var sequence = Convert.ToInt32(sequenceLong);
+
+                    var row = new QueryRow(docId, sequence, key, value, null);
                     row.Database = Database;
                     rows.AddItem<QueryRow>(row);
                     cursor.MoveToNext();
@@ -533,6 +593,8 @@ namespace Couchbase.Lite {
 
             if (options.GetFullTextSearch() != null) {
                 return FullTextQueryWithOptions(options);
+            } else if (options.GetSQLSearch() != null) {
+                return MultiKeyQueryWithOptions (options);
             } else {
                 return RegularQueryWithOptions(options);
             }
@@ -858,6 +920,32 @@ namespace Couchbase.Lite {
             var cursor = Database.StorageEngine.IntransactionRawQuery(sql, argsList.ToArray());
             return cursor;
         }
+
+        internal Cursor MultiKeyResultSetWithOptions(QueryOptions options)
+        {
+            var sql = "SELECT key, key1, key2, key3, key4,  value, docid, revs.sequence";
+            if (options.IsIncludeDocs())
+            {
+                sql = sql + ", revid, json";
+            }
+            sql = sql + " FROM maps, revs, docs WHERE maps.view_id=?";
+            var argsList = new List<string>();
+            argsList.AddItem(Sharpen.Extensions.ToString(Id));
+            sql = sql + " AND " + options.GetSQLSearch () + "";
+            sql = sql + " AND revs.sequence = maps.sequence AND docs.doc_id = revs.doc_id ORDER BY key";
+            if (options.IsDescending())
+            {
+                sql = sql + " DESC";
+            }
+            sql = sql + " LIMIT ? OFFSET ?";
+            argsList.AddItem(options.GetLimit().ToString());
+            argsList.AddItem(options.GetSkip().ToString());
+            Log.D(Database.Tag, "Query {0}:{1}", Name, sql);
+
+            var cursor = Database.StorageEngine.IntransactionRawQuery(sql, argsList.ToArray());
+            return cursor;
+        }
+
 
         /// <summary>Indexing</summary>
         internal string ToJSONString(Object obj)
@@ -1294,6 +1382,29 @@ namespace Couchbase.Lite {
         }
 
         public string Text { get; protected set; }
+    }
+
+    public class PropertyKey
+    {
+        public PropertyKey(List<object> keys)
+        {
+            Keys = keys;
+        }
+
+        public List<object> Keys { get; protected set; }
+    }
+
+    public class MultiKey
+    {
+        public MultiKey(PropertyKey props, FullTextKey full)
+        {
+            PropertyKey = props;
+            FullTextKey = full;
+        }
+
+        public PropertyKey PropertyKey { get; protected set; }
+
+        public FullTextKey FullTextKey { get; protected set; }
     }
 }
 
