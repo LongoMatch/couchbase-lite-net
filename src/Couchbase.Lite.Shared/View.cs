@@ -475,14 +475,10 @@ namespace Couchbase.Lite {
                 while (!cursor.IsAfterLast()) {
                     List<object> key = new List<object> {
                         FromJSON(cursor.GetBlob(0)),
-                        FromJSON(cursor.GetBlob(1)),
-                        FromJSON(cursor.GetBlob(2)),
-                        FromJSON(cursor.GetBlob(3)),
-                        FromJSON(cursor.GetBlob(4))
                     };
-                    var value = FromJSON(cursor.GetBlob(5));
-                    var docId = cursor.GetString(6);
-                    var sequenceLong = cursor.GetLong(7);
+                    var value = FromJSON(cursor.GetBlob(1));
+                    var docId = cursor.GetString(2);
+                    var sequenceLong = cursor.GetLong(3);
                     var sequence = Convert.ToInt32(sequenceLong);
 
                     var row = new QueryRow(docId, sequence, key, value, null);
@@ -923,7 +919,7 @@ namespace Couchbase.Lite {
 
         internal Cursor MultiKeyResultSetWithOptions(QueryOptions options)
         {
-            var sql = "SELECT key, key1, key2, key3, key4,  value, docid, revs.sequence";
+            var sql = "SELECT key, value, docid, revs.sequence";
             if (options.IsIncludeDocs())
             {
                 sql = sql + ", revid, json";
