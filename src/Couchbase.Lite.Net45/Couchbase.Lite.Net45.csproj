@@ -75,7 +75,7 @@
     <Reference Include="System.Security" />
     <Reference Include="System.Xml" />
     <Reference Include="ICSharpCode.SharpZipLib.Portable">
-      <HintPath>..\packages\SharpZipLib.Portable.0.86.0.0003\lib\portable-net45+netcore45+wp8+win8+wpa81+MonoTouch+MonoAndroid+Xamarin.iOS10\ICSharpCode.SharpZipLib.Portable.dll</HintPath>
+      <HintPath>$(SolutionDir)\packages\SharpZipLib.Portable.0.86.0.0003\lib\portable-net45+netcore45+wp8+win8+wpa81+MonoTouch+MonoAndroid+Xamarin.iOS10\ICSharpCode.SharpZipLib.Portable.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
