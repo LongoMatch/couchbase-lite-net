@@ -188,6 +188,12 @@ namespace Couchbase.Lite
         /// <value>The filter.</value>
         public Func<QueryRow, bool> Filter { get; set; }
 
+        /// <summary>
+        /// An SQL search to search in keys.
+        /// </summary>
+        /// <value>The SQL search.</value>
+        public string SQLSearch { get; set; }
+
         #endregion
 
         #region Constructors
