@@ -730,6 +730,8 @@ namespace Couchbase.Lite {
             IEnumerable<QueryRow> iterator = null;
             if (false) {
                 //TODO: Full text
+            } else if (options.SQLSearch != null) {
+                iterator = MultiKeyQuery(options);
             } else if (GroupOrReduce(options)) {
                 iterator = ReducedQuery(options);
             } else {
@@ -777,6 +779,43 @@ namespace Couchbase.Lite {
         {
             return Database.GetDocument(docId, sequenceNumber).GetProperties();
         }
+
+        internal IEnumerable<QueryRow> MultiKeyQuery(QueryOptions options)
+        {
+            var db = Database;
+            var filter = options.Filter;
+            int limit = int.MaxValue;
+            int skip = 0;
+            if (filter != null) {
+                // Custom post-filter means skip/limit apply to the filtered rows, not to the
+                // underlying query, so handle them specially:
+                limit = options.Limit;
+                skip = options.Skip;
+                options.Limit = QueryOptions.DEFAULT_LIMIT;
+                options.Skip = 0;
+            }
+
+            var rows = new List<QueryRow>();
+            RunMultiKeyQuery(options, (keyData, valueData, docId, cursor) =>
+            {
+                List<object> key = new List<object> {
+                    FromJSON(cursor.GetBlob(0)),
+                };
+                var value = FromJSON(cursor.GetBlob(1));
+                var sequenceLong = cursor.GetLong(2);
+                var sequence = Convert.ToInt32(sequenceLong);
+
+                var row = new QueryRow(docId, sequence, key, value, null, this);
+                row.Database = Database;
+                rows.Add(row);
+                if (limit-- == 0) {
+                    return new Status(StatusCode.Reserved);
+                }
+                return new Status(StatusCode.Ok);
+            });
+            return rows;
+        }
+
 
         internal IEnumerable<QueryRow> RegularQuery(QueryOptions options)
         {
@@ -1114,6 +1153,56 @@ namespace Couchbase.Lite {
             return null;
         }
 
+
+        internal Status RunMultiKeyQuery(QueryOptions options, Func<Lazy<byte[]>, Lazy<byte[]>, string, Cursor, Status> action)
+        {
+            var args = new List<string>();
+
+            string collationStr = "";
+            if (_collation == ViewCollation.ASCII) {
+                collationStr = " COLLATE JSON_ASCII ";
+            } else if (_collation == ViewCollation.Raw) {
+                collationStr = " COLLATE JSON_RAW ";
+            }
+
+            var sql = new StringBuilder("SELECT key, value, docid, revs.sequence");
+            if (options.IncludeDocs) {
+                sql.Append(", revid, json");
+            }
+            sql.AppendFormat(" FROM 'maps_{0}', revs, docs WHERE ", MapTableName);
+
+            sql.Append(options.SQLSearch);
+            sql.AppendFormat(" AND revs.sequence = 'maps_{0}'.sequence AND docs.doc_id = revs.doc_id " +
+            "ORDER BY", MapTableName);
+            sql.Append(" key");
+            sql.Append(collationStr);
+            if (options.Descending) {
+                sql.Append(" DESC");
+            }
+            sql.Append(" LIMIT ? OFFSET ?");
+
+            args.AddItem(options.Limit.ToString());
+            args.AddItem(options.Skip.ToString());
+            Log.D(TAG, "Query {0}:{1}", Name, sql);
+
+            var dbStorage = Database;
+            var status = new Status();
+            dbStorage.TryQuery(c =>
+            {
+                var docId = c.GetString(2);
+                status = action(new Lazy<byte[]>(() => c.GetBlob(0)), new Lazy<byte[]>(() => c.GetBlob(1)), docId, c);
+                if (status.IsError) {
+                    return false;
+                } else if ((int)status.Code <= 0) {
+                    status.Code = StatusCode.Ok;
+                }
+
+                return true;
+            }, true, sql.ToString(), args.ToArray());
+
+            return status;
+        }
+
         private Status RunQuery(QueryOptions options, Func<Lazy<byte[]>, Lazy<byte[]>, string, Cursor, Status> action)
         {
             if (options == null) {
@@ -1280,7 +1369,17 @@ namespace Couchbase.Lite {
                 "value TEXT," +
                 "fulltext_id INTEGER, " +
                 "bbox_id INTEGER, " +
-                "geokey BLOB)";
+                "geokey BLOB," +
+                "key1 TEXT COLLATE JSON," +
+                "key2 TEXT COLLATE JSON," +
+                "key3 TEXT COLLATE JSON," +
+                "key4 TEXT COLLATE JSON," +
+                "key5 TEXT COLLATE JSON," +
+                "key6 TEXT COLLATE JSON," +
+                "key7 TEXT COLLATE JSON," +
+                "key8 TEXT COLLATE JSON," +
+                "key9 TEXT COLLATE JSON" +
+                ")";
 
             if (!RunStatements(sql)) {
                 Log.W(TAG, "Couldn't create view index `{0}`", Name);
@@ -1324,12 +1423,27 @@ namespace Couchbase.Lite {
                 valueJSON = Manager.GetObjectMapper().WriteValueAsString(value);
             }
 
-            string keyJSON;
+            string keyJSON = null;
+            PropertyKey propKey = key as PropertyKey;
+            var insertValues = new ContentValues();
+
             //IEnumerable<byte> geoKey = null;
             if (false) {
                 //TODO: bbox, geo, fulltext
             } else {
-                keyJSON = Manager.GetObjectMapper().WriteValueAsString(key);
+                if (propKey != null) {
+                    int i = 0;
+                    foreach (object val in propKey.Keys) {
+                        if (i == 0) {
+                            keyJSON = Manager.GetObjectMapper().WriteValueAsString(val); 
+                        } else {
+                            insertValues["key" + i] = Manager.GetObjectMapper().WriteValueAsString(val);
+                        }
+                        i++;
+                    }
+                } else if (key != null) {
+                    keyJSON = Manager.GetObjectMapper().WriteValueAsString(key);
+                }
                 Log.V(TAG, "    emit({0}, {1}", keyJSON, valueJSON);
             }
 
@@ -1337,15 +1451,15 @@ namespace Couchbase.Lite {
                 keyJSON = "null";
             }
 
-            if (_emitSql == null) {
-                _emitSql = QueryString("INSERT INTO 'maps_#' (sequence, key, value, " +
-                    "fulltext_id, bbox_id, geokey) VALUES (?, ?, ?, ?, ?, ?)");
-            }
+            var valueJson = value == null ? null : Manager.GetObjectMapper().WriteValueAsString(value);
 
-            //TODO: bbox, geo, fulltext
+            insertValues["sequence"] = sequence;
+            insertValues["key"] = keyJSON;
+            insertValues["value"] = valueJson;
+
             try {
-                db.StorageEngine.ExecSQL(_emitSql, sequence, keyJSON, valueJSON, null, null, null);
-            } catch(Exception) {
+                Database.StorageEngine.Insert("maps_" + MapTableName, null, insertValues);
+            } catch (Exception) {
                 return StatusCode.DbError;
             }
 
@@ -1479,6 +1593,16 @@ namespace Couchbase.Lite {
         /// <param name="language">The language of the source.</param>
         ReduceDelegate CompileReduce(string source, string language);
 
+    }
+
+    public class PropertyKey
+    {
+        public PropertyKey(List<object> keys)
+        {
+            Keys = keys;
+        }
+
+        public List<object> Keys { get; protected set; }
     }
 
     #region Global Delegates
