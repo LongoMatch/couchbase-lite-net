@@ -303,6 +303,12 @@ namespace Couchbase.Lite {
         }
 
         /// <summary>
+        /// An SQL search to search in keys.
+        /// </summary>
+        /// <value>The SQL search.</value>
+        public string SQLSearch { get; set; }
+
+        /// <summary>
         /// Gets or sets an optional predicate that filters the resulting query rows.
         /// If present, it's called on every row returned from the query, and if it returnsfalseNO
         /// the row is skipped.
@@ -353,6 +359,7 @@ namespace Couchbase.Lite {
                 queryOptions.AllDocsMode = AllDocsMode;
                 queryOptions.StartKeyDocId = StartKeyDocId;
                 queryOptions.EndKeyDocId = EndKeyDocId;
+                queryOptions.SQLSearch = SQLSearch;
                 var postFilter = PostFilter;
                 if (postFilter != null) {
                     var database = Database;
