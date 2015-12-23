@@ -71,6 +71,16 @@ namespace Couchbase.Lite {
         ASCII
     }
 
+    public class PropertyKey
+    {
+        public PropertyKey(List<object> keys)
+        {
+            Keys = keys;
+        }
+
+        public List<object> Keys { get; protected set; }
+    }
+
     /// <summary>
     /// A Couchbase Lite <see cref="Couchbase.Lite.View"/>. 
     /// A <see cref="Couchbase.Lite.View"/> defines a persistent index managed by map/reduce.
