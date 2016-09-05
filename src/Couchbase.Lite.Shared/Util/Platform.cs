@@ -459,19 +459,20 @@ namespace Couchbase.Lite.Util
         private static string GetWindowsName()
         {
             string result = string.Empty;
-            var searcher = new System.Management.ManagementObjectSearcher("SELECT Caption FROM Win32_OperatingSystem");
+            /*var searcher = new System.Management.ManagementObjectSearcher("SELECT Caption FROM Win32_OperatingSystem");
             foreach (var os in searcher.Get())
             {
                 result = os["Caption"].ToString();
                 break;
-            }
+            }*/
+            result = Environment.OSVersion.ToString();
             return result;
         }
 
         private static string GetWindowsArchitecture()
         {
             string result = string.Empty;
-            var searcher = new System.Management.ManagementObjectSearcher("SELECT Architecture FROM Win32_Processor");
+            /*var searcher = new System.Management.ManagementObjectSearcher("SELECT Architecture FROM Win32_Processor");
             foreach (var cpu in searcher.Get())
             {
                 var type = (ushort)cpu["Architecture"];
@@ -491,7 +492,11 @@ namespace Couchbase.Lite.Util
                 }
 
                 break;
-            }
+            }*/
+            if (Environment.Is64BitOperatingSystem)
+                result = "x86_64";
+            else
+                result = "x86";
             return result;
         }
 
