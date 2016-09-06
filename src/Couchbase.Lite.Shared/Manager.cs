@@ -276,8 +276,10 @@ namespace Couchbase.Lite
             CapturedContext = new TaskFactory(scheduler);
             Log.To.TaskScheduling.I(TAG, "Callbacks will be scheduled on {0}", scheduler);
             workExecutor = new TaskFactory(new SingleTaskThreadpoolScheduler());
+            #if ENABLE_NETWORK
             _networkReachabilityManager = new NetworkReachabilityManager();
             _networkReachabilityManager.StartListening();
+            #endif
             StorageType = "SQLite";
             Log.To.Database.I(TAG, "Created {0}", this);
         }
@@ -342,7 +344,9 @@ namespace Couchbase.Lite
             }
 
             Log.To.Database.I(TAG, "CLOSING {0}", this);
+        #if ENABLE_NETWORK
             _networkReachabilityManager.StopListening();
+        #endif
             foreach (var database in databases.Values.ToArray()) {
                 var replicators = database.AllReplications;
 
@@ -632,13 +636,17 @@ namespace Couchbase.Lite
         private readonly DirectoryInfo directoryFile;
         private readonly IDictionary<String, Database> databases;
         private readonly List<Replication> replications;
+        #if ENABLE_NETWORK
         private readonly NetworkReachabilityManager _networkReachabilityManager;
+        #endif
         internal readonly TaskFactory workExecutor;
 
         // Instance Properties
         internal TaskFactory CapturedContext { get; private set; }
         internal IHttpClientFactory DefaultHttpClientFactory { get; set; }
+        #if ENABLE_NETWORK
         internal INetworkReachabilityManager NetworkReachabilityManager { get { return _networkReachabilityManager; } }
+        #endif
         internal SharedState Shared { get; private set; }
 
         // Instance Methods
