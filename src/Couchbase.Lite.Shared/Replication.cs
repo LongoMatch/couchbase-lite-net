@@ -969,12 +969,12 @@ namespace Couchbase.Lite
                 FireTrigger(ReplicationTrigger.StopImmediate);
                 return;
             }
-
+            #if ENABLE_NETWORK
             if (!LocalDatabase.Manager.NetworkReachabilityManager.CanReach(RemoteUrl.AbsoluteUri)) {
                 LastError = LocalDatabase.Manager.NetworkReachabilityManager.LastError;
                 FireTrigger(ReplicationTrigger.GoOffline);
             }
-
+            #endif
             if(!LocalDatabase.AddReplication(this) || !LocalDatabase.AddActiveReplication(this)) {
 #if DEBUG
                 var existing = LocalDatabase.AllReplicators.FirstOrDefault(x => x.RemoteCheckpointDocID() == RemoteCheckpointDocID());
@@ -1001,9 +1001,10 @@ namespace Couchbase.Lite
             }
 
             CheckSession();
-
+            #if ENABLE_NETWORK
             var reachabilityManager = LocalDatabase.Manager.NetworkReachabilityManager;
             reachabilityManager.StatusChanged += NetworkStatusChanged;
+            #endif
         }
 
         /// <summary>
@@ -1139,9 +1140,9 @@ namespace Couchbase.Lite
             CancelPendingRetryIfReady();
         }
 
-        #endregion
+#endregion
 
-        #region Internal Methods
+#region Internal Methods
 
         internal abstract void BeginReplicating();
 
@@ -1164,11 +1165,12 @@ namespace Couchbase.Lite
             lastSequenceChanged = true; // force save the sequence
             SaveLastSequence (() => 
             {
+                #if ENABLE_NETWORK
                 var reachabilityManager = LocalDatabase.Manager.NetworkReachabilityManager;
                 if (reachabilityManager != null) {
                     reachabilityManager.StatusChanged -= NetworkStatusChanged;
                 }
-
+                #endif
                 LocalDatabase.ForgetReplication(this);
                 Misc.SafeDispose(ref _client);
             });
@@ -1608,10 +1610,12 @@ namespace Couchbase.Lite
             Log.I(TAG, "Database closed while replication running, shutting down");
             lastSequenceChanged = true; // force save the sequence
             SaveLastSequence(() => {
+                #if ENABLE_NETWORK
                 var reachabilityManager = LocalDatabase.Manager.NetworkReachabilityManager;
                 if (reachabilityManager != null) {
                     reachabilityManager.StatusChanged -= NetworkStatusChanged;
                 }
+                #endif
 
                 Misc.SafeDispose(ref _client);
                 evt.Signal();
@@ -1635,9 +1639,9 @@ namespace Couchbase.Lite
             }
         }
 
-        #endregion
+#endregion
 
-        #region Private Methods
+#region Private Methods
 
         private void WaitForStopped (object sender, ReplicationChangeEventArgs e)
         {
@@ -1956,9 +1960,10 @@ namespace Couchbase.Lite
             _stateMachine.Configure(ReplicationState.Running).Permit(ReplicationTrigger.StopImmediate, ReplicationState.Stopped);
             _stateMachine.Configure(ReplicationState.Running).Permit(ReplicationTrigger.StopGraceful, ReplicationState.Stopping);
             _stateMachine.Configure(ReplicationState.Running).Permit(ReplicationTrigger.GoOffline, ReplicationState.Offline);
+            #if ENABLE_NETWORK
             _stateMachine.Configure(ReplicationState.Offline).PermitIf(ReplicationTrigger.GoOnline, ReplicationState.Running, 
                 () => LocalDatabase.Manager.NetworkReachabilityManager.CanReach(RemoteUrl.AbsoluteUri));
-            
+            #endif
             _stateMachine.Configure(ReplicationState.Stopping).Permit(ReplicationTrigger.StopImmediate, ReplicationState.Stopped);
             _stateMachine.Configure(ReplicationState.Stopped).Permit(ReplicationTrigger.Start, ReplicationState.Running);
 
@@ -2090,10 +2095,10 @@ namespace Couchbase.Lite
             }
         }
 
-        #endregion
+#endregion
     }
 
-    #region EventArgs Subclasses
+#region EventArgs Subclasses
 
     ///
     /// <see cref="Couchbase.Lite.Replication"/> Change Event Arguments.
@@ -2178,9 +2183,9 @@ namespace Couchbase.Lite
         }
     }
 
-    #endregion
+#endregion
 
-    #region Delegates
+#region Delegates
 
     /// <summary>
     /// The signature of a method that transforms a set of properties
@@ -2189,6 +2194,6 @@ namespace Couchbase.Lite
 
     internal delegate void SaveLastSequenceCompletionBlock();
 
-    #endregion
+#endregion
 
 }

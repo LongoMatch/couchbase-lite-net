@@ -251,9 +251,10 @@ namespace Couchbase.Lite
             CapturedContext = new TaskFactory(scheduler);
             workExecutor = new TaskFactory(new SingleTaskThreadpoolScheduler());
             Log.D(TAG, "New Manager uses a scheduler with a max concurrency level of {0}".Fmt(workExecutor.Scheduler.MaximumConcurrencyLevel));
-
+            #if ENABLE_NETWORK
             _networkReachabilityManager = new NetworkReachabilityManager();
             _networkReachabilityManager.StartListening();
+            #endif
             StorageType = "SQLite";
         }
 
@@ -310,7 +311,9 @@ namespace Couchbase.Lite
         /// </summary>
         public void Close() 
         {
+        #if ENABLE_NETWORK
             _networkReachabilityManager.StopListening();
+        #endif
             foreach (var database in databases.Values.ToArray()) {
                 var replicators = database.AllReplications;
 
@@ -517,7 +520,7 @@ namespace Couchbase.Lite
             System.IO.Directory.Delete(tempPath, true);
         }
 
-    #endregion
+    #endregion
     
     #region Non-public Members
 
@@ -544,13 +547,17 @@ namespace Couchbase.Lite
         private readonly DirectoryInfo directoryFile;
         private readonly IDictionary<String, Database> databases;
         private readonly List<Replication> replications;
+        #if ENABLE_NETWORK
         private readonly NetworkReachabilityManager _networkReachabilityManager;
+        #endif
         internal readonly TaskFactory workExecutor;
 
         // Instance Properties
         internal TaskFactory CapturedContext { get; private set; }
         internal IHttpClientFactory DefaultHttpClientFactory { get; set; }
+        #if ENABLE_NETWORK
         internal INetworkReachabilityManager NetworkReachabilityManager { get { return _networkReachabilityManager; } }
+        #endif
         internal SharedState Shared { get; private set; }
 
         // Instance Methods
@@ -647,7 +654,7 @@ namespace Couchbase.Lite
 
         private bool UpgradeDatabase(FileInfo path)
         {
-            #if !NOSQLITE
+        #if !NOSQLITE
             var previousStorageType = StorageType;
             try {
                 StorageType = "SQLite";
@@ -683,7 +690,7 @@ namespace Couchbase.Lite
             } finally {
                 StorageType = previousStorageType;
             }
-            #endif
+        #endif
         }
 
 
@@ -987,16 +994,16 @@ namespace Couchbase.Lite
 
     #endregion
 
-        #region Overrides
-        #pragma warning disable 1591
+#region Overrides
+#pragma warning disable 1591
 
         public override string ToString()
         {
             return String.Format("[Manager] {0}", Directory);
         }
 
-        #pragma warning restore 1591
-        #endregion
+#pragma warning restore 1591
+#endregion
     }
 
 }
