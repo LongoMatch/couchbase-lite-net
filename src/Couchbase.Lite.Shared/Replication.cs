@@ -1064,9 +1064,12 @@ namespace Couchbase.Lite
                 authorizer.LocalUUID = LocalDatabase.PublicUUID ();
             }
 
+            #if ENABLE_NETWORK
             var reachabilityManager = LocalDatabase.Manager.NetworkReachabilityManager;
             reachabilityManager.StatusChanged += NetworkStatusChanged;
+            #endif
 
+            #if ENABLE_NETWORK
             if (!LocalDatabase.Manager.NetworkReachabilityManager.CanReach(RemoteUrl.AbsoluteUri, ReplicationOptions.RequestTimeout)) {
                 Log.To.Sync.I(Tag, "Remote endpoint is not reachable, going offline...");
                 LastError = LocalDatabase.Manager.NetworkReachabilityManager.LastError;
@@ -1074,6 +1077,7 @@ namespace Couchbase.Lite
                 CheckOnlineLoop();
             }
 
+            #endif
             LocalDatabase.AddReplication(this);
             if(!LocalDatabase.AddActiveReplication(this)) {
 #if DEBUG
@@ -1257,10 +1261,13 @@ namespace Couchbase.Lite
             lastSequenceChanged = true; // force save the sequence
             SaveLastSequence(() =>
            {
+               #if ENABLE_NETWORK
+
                var reachabilityManager = LocalDatabase.Manager.NetworkReachabilityManager;
                if(reachabilityManager != null) {
                    reachabilityManager.StatusChanged -= NetworkStatusChanged;
                }
+               #endif
 
                remoteSession.Dispose();
                Log.To.Sync.I(Tag, "{0} stopped.  Elapsed time {1} sec", this, (DateTime.UtcNow - _startTime).TotalSeconds.ToString("F3"));
@@ -1408,10 +1415,12 @@ namespace Couchbase.Lite
             Log.To.Sync.I(Tag, "Database closed while replication running, shutting down");
             lastSequenceChanged = true; // force save the sequence
             SaveLastSequence(() => {
+                #if ENABLE_NETWORK
                 var reachabilityManager = LocalDatabase.Manager.NetworkReachabilityManager;
                 if (reachabilityManager != null) {
                     reachabilityManager.StatusChanged -= NetworkStatusChanged;
                 }
+                #endif
 
                 Stop();
                 evt.Signal();
@@ -1739,8 +1748,10 @@ namespace Couchbase.Lite
             _stateMachine.Configure(ReplicationState.Running).Permit(ReplicationTrigger.StopGraceful, ReplicationState.Stopping);
 
             _stateMachine.Configure(ReplicationState.Running).Permit(ReplicationTrigger.GoOffline, ReplicationState.Offline);
+            #if ENABLE_NETWORK
             _stateMachine.Configure(ReplicationState.Offline).PermitIf(ReplicationTrigger.GoOnline, ReplicationState.Running, 
                 () => LocalDatabase.Manager.NetworkReachabilityManager.CanReach(RemoteUrl.AbsoluteUri, ReplicationOptions.RequestTimeout));
+            #endif
             
             _stateMachine.Configure(ReplicationState.Stopping).Permit(ReplicationTrigger.StopImmediate, ReplicationState.Stopped);
             _stateMachine.Configure(ReplicationState.Stopped).Permit(ReplicationTrigger.Start, ReplicationState.Running);
