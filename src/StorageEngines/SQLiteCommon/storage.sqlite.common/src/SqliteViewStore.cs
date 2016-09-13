@@ -184,12 +184,22 @@ namespace Couchbase.Lite.Storage.SQLCipher
         {
             const string sql = 
                 "CREATE TABLE IF NOT EXISTS 'maps_#' (" +
-                    "sequence INTEGER NOT NULL REFERENCES revs(sequence) ON DELETE CASCADE," +
-                    "key TEXT NOT NULL COLLATE JSON," +
-                    "value TEXT," +
-                    "fulltext_id INTEGER, " +
-                    "bbox_id INTEGER, " +
-                    "geokey BLOB)";
+                "sequence INTEGER NOT NULL REFERENCES revs(sequence) ON DELETE CASCADE," +
+                "key TEXT NOT NULL COLLATE JSON," +
+                "value TEXT," +
+                "fulltext_id INTEGER, " +
+                "bbox_id INTEGER, " +
+                "geokey BLOB," +
+                "key1 TEXT COLLATE JSON," +
+                "key2 TEXT COLLATE JSON," +
+                "key3 TEXT COLLATE JSON," +
+                "key4 TEXT COLLATE JSON," +
+                "key5 TEXT COLLATE JSON," +
+                "key6 TEXT COLLATE JSON," +
+                "key7 TEXT COLLATE JSON," +
+                "key8 TEXT COLLATE JSON," +
+                "key9 TEXT COLLATE JSON" +
+                ")";
 
             try {
                 RunStatements(sql);
@@ -212,12 +222,29 @@ namespace Couchbase.Lite.Storage.SQLCipher
                 valueJSON = Manager.GetObjectMapper().WriteValueAsString(value);
             }
 
-            string keyJSON;
+            string keyJSON = null;
+            PropertyKey propKey = key as PropertyKey;
+            var insertValues = new ContentValues();
+
             //IEnumerable<byte> geoKey = null;
             if (false) {
                 //TODO: bbox, geo, fulltext
             } else {
-                keyJSON = Manager.GetObjectMapper().WriteValueAsString(key);
+                if (propKey != null) {
+                    int i = 0;
+                    foreach (object val in propKey.Keys) {
+                        if (i == 0) {
+                            keyJSON = Manager.GetObjectMapper().WriteValueAsString(val); 
+                        }
+                        else {
+                            insertValues["key" + i] = Manager.GetObjectMapper().WriteValueAsString(val);
+                        }
+                        i++;
+                    }
+                }
+                else if (key != null) {
+                    keyJSON = Manager.GetObjectMapper().WriteValueAsString(key);
+                }
                 Log.To.Query.V(Tag, "    emit({0}, {1}", 
                         new SecureLogString(keyJSON, LogMessageSensitivity.PotentiallyInsecure),
                         new SecureLogString(valueJSON, LogMessageSensitivity.PotentiallyInsecure));
@@ -227,21 +254,22 @@ namespace Couchbase.Lite.Storage.SQLCipher
                 keyJSON = "null";
             }
 
-            if (_emitSql == null) {
-                _emitSql = QueryString("INSERT INTO 'maps_#' (sequence, key, value, " +
-                "fulltext_id, bbox_id, geokey) VALUES (?, ?, ?, ?, ?, ?)");
-            }
+            var valueJson = value == null ? null : Manager.GetObjectMapper().WriteValueAsString(value);
 
-            //TODO: bbox, geo, fulltext
+            insertValues["sequence"] = sequence;
+            insertValues["key"] = keyJSON;
+            insertValues["value"] = valueJson;
+
             try {
-                db.StorageEngine.ExecSQL(_emitSql, sequence, keyJSON, valueJSON, null, null, null);
-            } catch(Exception) {
+                _dbStorage.StorageEngine.Insert("maps_" + MapTableName, null, insertValues);
+            }
+            catch (Exception) {
                 return StatusCode.DbError;
             }
 
             return StatusCode.Ok;
         }
-            
+
         private void FinishCreatingIndex()
         {
             const string sql = "CREATE INDEX IF NOT EXISTS 'maps_#_keys' on 'maps_#'(key COLLATE JSON);" +
@@ -932,6 +960,10 @@ namespace Couchbase.Lite.Storage.SQLCipher
                 options.Skip = 0;
             }
 
+            if (options.SQLSearch != null) {
+                return MultiKeyQuery(options);
+            }
+
             var rows = new List<QueryRow>();
             RunQuery(options, (keyData, valueData, docId, cursor) =>
             {
@@ -1159,6 +1191,99 @@ namespace Couchbase.Lite.Storage.SQLCipher
         public IDictionary<string, object> DocumentProperties(string docId, long sequenceNumber)
         {
             return _dbStorage.GetDocument(docId, sequenceNumber).GetProperties();
+        }
+
+        #endregion
+
+        #region Fluendo changes
+
+        internal IEnumerable<QueryRow> MultiKeyQuery(QueryOptions options)
+        {
+            var db = _dbStorage;
+            var filter = options.Filter;
+            int limit = int.MaxValue;
+            int skip = 0;
+            if (filter != null) {
+                // Custom post-filter means skip/limit apply to the filtered rows, not to the
+                // underlying query, so handle them specially:
+                limit = options.Limit;
+                skip = options.Skip;
+                options.Limit = QueryOptions.DefaultLimit;
+                options.Skip = 0;
+            }
+
+            var rows = new List<QueryRow>();
+            RunMultiKeyQuery(options, (keyData, valueData, docId, cursor) =>
+            {
+                List<object> key = new List<object> {
+                    FromJSON(cursor.GetBlob(0)),
+                };
+                var value = FromJSON(cursor.GetBlob(1));
+                var sequenceLong = cursor.GetLong(2);
+                var sequence = Convert.ToInt32(sequenceLong);
+
+                var row = new QueryRow(docId, sequence, key, value, null, this);
+                // In their code, they don't set this, do we need it?
+//                row.Database = Database;
+                rows.Add(row);
+                if (limit-- == 0) {
+                    return new Status(StatusCode.Reserved);
+                }
+                return new Status(StatusCode.Ok);
+            });
+            return rows;
+        }
+
+
+        internal Status RunMultiKeyQuery(QueryOptions options, Func<Lazy<byte[]>, Lazy<byte[]>, string, Cursor, Status> action)
+        {
+            var args = new List<string>();
+
+            string collationStr = "";
+            if (_collation == ViewCollation.ASCII) {
+                collationStr = " COLLATE JSON_ASCII ";
+            }
+            else if (_collation == ViewCollation.Raw) {
+                collationStr = " COLLATE JSON_RAW ";
+            }
+
+            var sql = new StringBuilder("SELECT key, value, docid, revs.sequence");
+            if (options.IncludeDocs) {
+                sql.Append(", revid, json");
+            }
+            sql.AppendFormat(" FROM 'maps_{0}', revs, docs WHERE ", MapTableName);
+
+            sql.Append(options.SQLSearch);
+            sql.AppendFormat(" AND revs.sequence = 'maps_{0}'.sequence AND docs.doc_id = revs.doc_id " +
+            "ORDER BY", MapTableName);
+            sql.Append(" key");
+            sql.Append(collationStr);
+            if (options.Descending) {
+                sql.Append(" DESC");
+            }
+            sql.Append(" LIMIT ? OFFSET ?");
+
+            args.Add(options.Limit.ToString());
+            args.Add(options.Skip.ToString());
+            Log.D(Tag, "Query {0}:{1}", Name, sql);
+
+            var dbStorage = _dbStorage;
+            var status = new Status();
+            dbStorage.TryQuery(c =>
+            {
+                var docId = c.GetString(2);
+                status = action(new Lazy<byte[]>(() => c.GetBlob(0)), new Lazy<byte[]>(() => c.GetBlob(1)), docId, c);
+                if (status.IsError) {
+                    return false;
+                }
+                else if ((int)status.Code <= 0) {
+                    status.Code = StatusCode.Ok;
+                }
+
+                return true;
+            }, true, sql.ToString(), args.ToArray());
+
+            return status;
         }
 
         #endregion
