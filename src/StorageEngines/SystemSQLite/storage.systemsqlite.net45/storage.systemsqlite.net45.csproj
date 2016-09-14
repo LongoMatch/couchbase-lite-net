@@ -49,6 +49,7 @@
     </Reference>
     <Reference Include="SQLitePCL.ugly">
       <HintPath>..\..\..\packages\SQLitePCL.ugly.0.9.3\lib\net35\SQLitePCL.ugly.dll</HintPath>
+
     </Reference>
     <Reference Include="SQLitePCLPlugin_esqlite3">
       <HintPath>..\..\..\packages\SQLitePCL.plugin.sqlite3.net45.0.9.3\lib\net45\SQLitePCLPlugin_esqlite3.dll</HintPath>
