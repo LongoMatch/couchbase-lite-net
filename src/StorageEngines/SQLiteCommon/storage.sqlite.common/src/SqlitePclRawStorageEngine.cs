@@ -408,7 +408,8 @@ namespace Couchbase.Lite.Storage.SQLCipher
         public bool RunInTransaction(RunInTransactionDelegate block)
         {
             var status = false;
-            try {
+            var t = Factory.StartNew(() =>
+            {
                 var keepGoing = false;
                 int retries = 0;
                 do {
@@ -447,7 +448,10 @@ namespace Couchbase.Lite.Storage.SQLCipher
                         EndTransaction(status);
                     }
                 } while(keepGoing);
-            } catch (Exception e) {
+            });
+            try {
+                t.Wait();
+            } catch(Exception e) {
                 throw Misc.UnwrapAggregate(e);
             }
 
