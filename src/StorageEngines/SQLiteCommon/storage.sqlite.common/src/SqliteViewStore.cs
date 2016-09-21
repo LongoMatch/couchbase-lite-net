@@ -659,14 +659,13 @@ namespace Couchbase.Lite.Storage.SQLCipher
 
                         int totalRows = view.TotalRows;
                         viewTotalRows[viewId] = totalRows;
-
-
                         viewLastSequence[i++] = last;
                         if (last < 0) {
                             throw Misc.CreateExceptionAndLog(Log.To.View, StatusCode.DbError, Tag,
                                 "Invalid last sequence indexed ({0}) received from {1}", last, view);
                         }
 
+                        view.CreateIndex();
                         if (last < dbMaxSequence) {
                             minLastSequence = Math.Min(minLastSequence, last);
                             Log.To.View.V(Tag, "    {0} last indexed at #{1}", view.Name, last);
