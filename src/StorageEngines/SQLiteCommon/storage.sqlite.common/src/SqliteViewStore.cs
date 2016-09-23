@@ -639,6 +639,7 @@ namespace Couchbase.Lite.Storage.SQLCipher
                                 "Invalid last sequence indexed ({0}) received from {1}", last, view);
                         }
 
+                        view.CreateIndex();
                         if (last < dbMaxSequence) {
                             minLastSequence = Math.Min(minLastSequence, last);
                             Log.To.View.V(Tag, "    {0} last indexed at #{1}", view.Name, last);
