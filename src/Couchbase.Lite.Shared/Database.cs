@@ -652,11 +652,6 @@ namespace Couchbase.Lite
             }
 
             if(result == null) {
-                var filterCompiler = FilterCompiler;
-                if(filterCompiler == null) {
-                    return null;
-                }
-
                 string language = null;
                 var sourceCode = GetDesignDocFunction(name, "filters", out language) as string;
 
@@ -664,6 +659,15 @@ namespace Couchbase.Lite
                     if(status != null) {
                         status.Code = StatusCode.NotFound;
                     }
+                    return null;
+                }
+
+                var filterCompiler = FilterCompiler;
+                if(filterCompiler == null) {
+                    if(status != null) {
+                        status.Code = StatusCode.NotImplemented;
+                    }
+
                     return null;
                 }
 
