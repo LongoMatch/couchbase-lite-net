@@ -1282,7 +1282,7 @@ namespace Couchbase.Lite.Storage.SQLCipher
                 }
 
                 return true;
-            }, true, sql.ToString(), args.ToArray());
+            }, sql.ToString(), args.ToArray());
 
             return status;
         }
