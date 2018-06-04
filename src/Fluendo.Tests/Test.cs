@@ -8,25 +8,30 @@ namespace FluendoUnitTests
     [TestFixture()]
     public class SQLSearch
     {
+        Manager manager;
+        Database db;
+
+        [SetUp]
+        public void SetUp()
+        {
+            manager = new Manager(new System.IO.DirectoryInfo("/tmp"),
+                                                          ManagerOptions.Default);
+            db = manager.GetDatabase("test" + new Guid().ToString());
+            db.SetMaxRevTreeDepth(0);
+        }
+
         [Test()]
         public void TestCase()
         {
-            Manager manager = new Manager(new System.IO.DirectoryInfo("/tmp"),
-                                  ManagerOptions.Default);
-            Database db = manager.GetDatabase("test");
-            db.MaxRevTreeDepth = 1;
-
             int c = 0;
-            db.RunInTransaction(() =>
-            {
-                foreach (string player in new []{"andoni", "jorge", "julien", "josep", "xavi", "adrid", "albert"}) {
-                    foreach (string team in new []{"barça", "madrid", "murcia"}) {
-                        foreach (string action in new []{"gol", "falta", "penalty", "pase"}) {
+            db.RunInTransaction(() => {
+                foreach(string player in new[] { "andoni", "jorge", "julien", "josep", "xavi", "adrid", "albert" }) {
+                    foreach(string team in new[] { "barça", "madrid", "murcia" }) {
+                        foreach(string action in new[] { "gol", "falta", "penalty", "pase" }) {
                             int j = 10;
-                            for (int i = 0; i < j; i++) {
+                            for(int i = 0; i < j; i++) {
                                 Document doc = db.GetDocument(c.ToString());
-                                doc.Update((UnsavedRevision rev) =>
-                                {
+                                doc.Update((UnsavedRevision rev) => {
                                     IDictionary<string, object> props = new Dictionary<string, object>();
                                     props["player"] = player;
                                     props["team"] = team;
@@ -44,9 +49,8 @@ namespace FluendoUnitTests
             });
 
             View view = db.GetView("Events");
-            if (view.Map == null) {
-                view.SetMap((document, emitter) =>
-                {
+            if(view.Map == null) {
+                view.SetMap((document, emitter) => {
                     {
                         List<object> keys = new List<object> {
                             document["player"], document["team"],
@@ -79,6 +83,30 @@ namespace FluendoUnitTests
             q.SQLSearch = "key='\"andoni\"' AND key1 IN ('\"madrid\"', '\"barça\"')";
             ret = q.Run();
             Assert.AreEqual(80, ret.Count);
+        }
+
+        [Test()]
+        public void TestDelete()
+        {
+
+            // Arrange
+            Guid c = new Guid();
+            Document doc = db.GetDocument(c.ToString());
+            doc.Update((UnsavedRevision rev) => {
+                IDictionary<string, object> props = new Dictionary<string, object>();
+                props.Add("foo", "bar");
+                rev.SetProperties(props);
+                return true;
+            });
+
+            // Action
+            Document storedDoc = db.GetExistingDocument(c.ToString());
+            storedDoc.Delete();
+
+            // Assert
+            Document deletedDoc = db.GetExistingDocument(c.ToString());
+
+            Assert.IsNull(deletedDoc);
         }
     }
 }
