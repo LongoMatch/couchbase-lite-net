@@ -30,13 +30,13 @@ For full notes see https://developer.couchbase.com/documentation/mobile/1.4/refe
       <group targetFramework="net45">
         <dependency id="Newtonsoft.Json" version="7.0.1" />
         <dependency id="SharpZipLib.Portable" version="0.86.0.0003" />
-        <dependency id="Stateless" version="2.5.53.0" />
+        <dependency id="Stateless" version="2.5.62.0" />
         <dependency id="Couchbase.Lite.Storage.SystemSQLite" version="$version$" />
       </group>
       <group>
         <dependency id="Newtonsoft.Json" version="7.0.1" />
         <dependency id="SharpZipLib.Portable" version="0.86.0.0003" />
-        <dependency id="Stateless" version="2.5.53.0" />
+        <dependency id="Stateless" version="2.5.62.0" />
         <dependency id="Couchbase.Lite.Storage.SystemSQLite" version="$version$" />
       </group>
     </dependencies>
