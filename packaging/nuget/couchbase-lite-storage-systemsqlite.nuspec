@@ -37,6 +37,7 @@ For full notes see https://developer.couchbase.com/documentation/mobile/1.4/refe
       <group targetFramework="monoandroid">
         <dependency id="SQLitePCL.raw" version="0.9.3" />
         <dependency id="SQLitePCL.ugly" version="0.9.3" />
+        <dependency id="SQLitePCL.plugin.sqlite3.android" version="0.9.3" />
       </group>
       <group targetFramework="xamarinios">
         <dependency id="SQLitePCL.raw" version="0.9.3" />

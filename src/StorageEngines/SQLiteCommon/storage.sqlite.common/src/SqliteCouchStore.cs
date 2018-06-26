@@ -235,6 +235,8 @@ namespace Couchbase.Lite.Storage.SQLCipher
             {
                 raw.SetProvider(new SQLite3Provider_esqlite3());
             }
+#elif SQLITE && __ANDROID__
+            raw.SetProvider(new SQLite3Provider_esqlite3());
 #endif
             Log.To.Database.I(TAG, "Initialized SQLite store (version {0} ({1}))", raw.sqlite3_libversion(), raw.sqlite3_sourceid());
             _SqliteVersion = raw.sqlite3_libversion_number();
